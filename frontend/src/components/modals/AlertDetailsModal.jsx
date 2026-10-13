@@ -1,0 +1,278 @@
+import React from 'react';
+import { X, AlertTriangle, ShieldCheck, MapPin, Clock, Share2, CheckCircle2 } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
+
+export const AlertDetailsModal = ({ alert, isOpen, onClose, onShare }) => {
+  const { 
+    language, 
+    t, 
+    translateAlertTitle, 
+    translateAlertDescription, 
+    translateSeverity, 
+    formatUntil 
+  } = useLanguage();
+
+  if (!isOpen || !alert) return null;
+
+  const isSevere = alert.severity === 'Severe' || alert.severityLevel === 'high';
+  const isModerate = alert.severity === 'Moderate';
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn select-none">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-scaleUp">
+        {/* Modal Header */}
+        <div className={`p-6 border-b ${
+          isSevere 
+            ? 'bg-rose-50/80 dark:bg-rose-950/40 border-rose-100 dark:border-rose-900/50' 
+            : isModerate 
+            ? 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-100 dark:border-amber-900/50' 
+            : 'bg-yellow-50/80 dark:bg-yellow-950/40 border-yellow-100 dark:border-yellow-900/50'
+        } flex items-start justify-between`}>
+          <div className="flex items-start gap-3.5">
+            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-xs ${
+              isSevere 
+                ? 'bg-rose-600 text-white' 
+                : isModerate 
+                ? 'bg-amber-500 text-white' 
+                : 'bg-yellow-500 text-white'
+            }`}>
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide ${
+                  isSevere 
+                    ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/60 dark:text-rose-200' 
+                    : isModerate 
+                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-200' 
+                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/60 dark:text-yellow-200'
+                }`}>
+                  {translateSeverity(alert.severity) || t('warnings')} {t('alerts')}
+                </span>
+                <span className="text-xs text-slate-500 font-medium">{t('source')}: {alert.source || 'IMD'}</span>
+              </div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white mt-1">
+                {translateAlertTitle(alert.title)}
+              </h3>
+              <p className="text-xs font-semibold text-slate-700 dark:text-slate-300 mt-0.5 flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-blue-500" />
+                <span>{alert.region || alert.location}</span>
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-black/5 dark:hover:bg-white/5 transition cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Modal Body */}
+        <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+          {/* Validity timeframe */}
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-800/60 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+              <Clock className="w-4 h-4 text-blue-500" />
+              <span><strong>{language === 'mr' ? 'प्रारंभ:' : language === 'hi' ? 'शुरुआत:' : 'Effective:'}</strong> {alert.effectiveTime || alert.time || '21 May 2025, 8:20 AM'}</span>
+            </div>
+            <div className="text-slate-500">
+              <span><strong>{formatUntil(alert.untilTime || '22 May 2025, 8:00 AM')}</strong></span>
+            </div>
+          </div>
+
+          {/* Source Type & Authority / AGI Verification Card */}
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 space-y-2">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                {language === 'mr' ? 'प्रमाणीकरण व स्त्रोत' : 'Verification & Authority'}
+              </span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                alert.sourceType === 'agi_analysis'
+                  ? 'bg-purple-100 dark:bg-purple-950/80 text-purple-700 dark:text-purple-300 border border-purple-300'
+                  : alert.sourceType === 'authority_broadcast'
+                  ? 'bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 border border-amber-300'
+                  : 'bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border border-blue-300'
+              }`}>
+                {alert.sourceType === 'agi_analysis'
+                  ? '🧠 WeatherGPT AGI Analysis'
+                  : alert.sourceType === 'authority_broadcast'
+                  ? '🛡️ Authority Broadcast'
+                  : '🏛️ IMD Official Warning'}
+              </span>
+            </div>
+
+            <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+              {alert.source}
+            </p>
+
+            {/* AGI Model Confidence & Multi-Model Chips */}
+            {alert.metadata?.confidence && (
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-semibold">
+                  <span className="text-slate-500">AGI Neural Model Confidence:</span>
+                  <span className="font-extrabold text-purple-600 dark:text-purple-400">{alert.metadata.confidence}</span>
+                </div>
+                {alert.metadata.models && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {alert.metadata.models.map((m, idx) => (
+                      <span key={idx} className="px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-300 text-[10px] font-bold">
+                        {m}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Authority Order Number & Issuing Officer */}
+            {alert.metadata?.orderNo && (
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-1 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500">Official Order No:</span>
+                  <span className="font-mono font-bold text-amber-700 dark:text-amber-400">{alert.metadata.orderNo}</span>
+                </div>
+                {alert.metadata.emergencyPhone && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Direct Emergency Control:</span>
+                    <a href={`tel:${alert.metadata.emergencyPhone}`} className="font-bold text-emerald-600 hover:underline">
+                      📞 {alert.metadata.emergencyPhone}
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Affected Areas / Tehsils */}
+            {alert.affectedAreas && alert.affectedAreas.length > 0 && (
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+                <span className="text-[10px] text-slate-400 block font-semibold mb-1">
+                  {language === 'mr' ? 'बाधित तालुके / क्षेत्रे:' : 'Affected Tehsils & Areas:'}
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {alert.affectedAreas.map((area, idx) => (
+                    <span key={idx} className="px-2 py-0.5 rounded-md bg-slate-200/80 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-[10px] font-bold">
+                      📍 {area}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Description */}
+          <div>
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-1.5">
+              {language === 'mr' ? 'हवामान सल्ला व माहिती' : language === 'hi' ? 'मौसम सलाह एवं विवरण' : 'Meteorological Advisory'}
+            </h4>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+              {translateAlertDescription(alert.description || alert.fullDescription)}
+            </p>
+          </div>
+
+          {/* Key Metrics */}
+          <div className="grid grid-cols-3 gap-2.5">
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-center border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] text-slate-400 block font-medium">{t('probability')}</span>
+              <span className="text-sm font-extrabold text-slate-800 dark:text-slate-100">{alert.probability || '85%'}</span>
+            </div>
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-center border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] text-slate-400 block font-medium">{language === 'mr' ? 'अत्यावश्यकता' : language === 'hi' ? 'तात्कालिकता' : 'Urgency'}</span>
+              <span className="text-sm font-extrabold text-rose-600 dark:text-rose-400">{alert.severity === 'Severe' ? (language === 'mr' ? 'तात्काळ' : 'Immediate') : (language === 'mr' ? 'सतर्क राहा' : 'Be Prepared')}</span>
+            </div>
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl text-center border border-slate-100 dark:border-slate-800">
+              <span className="text-[10px] text-slate-400 block font-medium">{t('severity')}</span>
+              <span className={`text-sm font-extrabold ${alert.severity === 'Severe' ? 'text-rose-600 dark:text-rose-400' : alert.severity === 'Moderate' ? 'text-orange-600 dark:text-orange-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                {alert.severity}
+              </span>
+            </div>
+          </div>
+
+          {/* 4-Tier Impact-Based Decision Support */}
+          <div className="space-y-3">
+            {/* 1. Official Warning */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                  <span>🏛️ 1. OFFICIAL WARNING</span>
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold">
+                  {alert.source || 'IMD / MoES'}
+                </span>
+              </div>
+              <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-relaxed">
+                {translateAlertDescription(alert.description || alert.fullDescription || alert.title)}
+              </p>
+            </div>
+
+            {/* 2. What This Means */}
+            <div className="p-3.5 rounded-2xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-900/40">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-300 flex items-center gap-1.5 mb-1.5">
+                <span>💡 2. WHAT THIS MEANS (PLAIN LANGUAGE)</span>
+              </span>
+              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                {alert.meaning || (isSevere
+                  ? 'Severe disruption is expected to local transport, power supplies, and outdoor activities. Low-lying passages and subways face rapid water buildup within 30–45 minutes of heavy convective showers.'
+                  : 'Noticeable weather shift that will affect daily commute, outdoor work, or field operations. Be prepared for sudden changes in road grip and visibility.')}
+              </p>
+            </div>
+
+            {/* 3. What You Should Do */}
+            <div className="p-3.5 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/30 border border-emerald-200/60 dark:border-emerald-900/40">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5 mb-1.5">
+                <span>🎯 3. WHAT YOU SHOULD DO (ACTION)</span>
+              </span>
+              <ul className="space-y-1.5 text-xs text-slate-700 dark:text-slate-300">
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-600 font-bold">•</span>
+                  <span>{alert.action || 'Avoid waterlogged arterial roads and do not walk or drive through flowing water.'}</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-600 font-bold">•</span>
+                  <span>Farmers: Pause all chemical/fertilizer spraying and inspect root drainage channels.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-emerald-600 font-bold">•</span>
+                  <span>Emergency Assistance: State Disaster Control Room 1070 / Police & Medical 112.</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* 4. Why (Data Reason) */}
+            <div className="p-3.5 rounded-2xl bg-amber-50/60 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/40">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 dark:text-amber-300 flex items-center gap-1.5 mb-1.5">
+                <span>📊 4. WHY (METEOROLOGICAL TRIGGER)</span>
+              </span>
+              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-mono">
+                {alert.reason || (isSevere
+                  ? 'Rainfall rate > 45 mm/hr detected on Doppler radar, combined with high soil moisture saturation (>85%) inhibiting drainage.'
+                  : 'Numerical forecast ensemble indicates >65% probability of precipitation and localized wind gusts exceeding 35 km/h.')}
+              </p>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onShare}
+              className="flex-1 py-2.5 px-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <Share2 className="w-3.5 h-3.5" />
+              <span>{language === 'mr' ? 'इशारा शेअर करा' : language === 'hi' ? 'अलर्ट शेयर करें' : 'Share Alert'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>{language === 'mr' ? 'समजले व सुरक्षित' : language === 'hi' ? 'स्वीकार किया' : 'Acknowledge'}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
